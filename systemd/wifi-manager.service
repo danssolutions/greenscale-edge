@@ -1,0 +1,17 @@
+[Unit]
+Description=Greenscale WiFi Auto Access Point Manager
+After=network-pre.target
+Before=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/user/greenscale-edge/network_manager/wifi_manager.py
+Restart=on-failure
+RestartSec=10
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

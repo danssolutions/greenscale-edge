@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Greenscale WiFi Setup</title>
+</head>
+<body>
+  <h1>Configure WiFi Network</h1>
+  {% if error %}
+    <p style="color: red;">{{ error }}</p>
+  {% endif %}
+  <form method="post">
+    <label for="ssid">SSID:</label><br>
+    <input type="text" id="ssid" name="ssid"><br><br>
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" name="password"><br><br>
+    <input type="submit" value="Save & Connect">
+  </form>
+</body>
+</html>
