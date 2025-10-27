@@ -134,3 +134,8 @@ def main():
 
     logging.info(
         f"No WiFi within {WAIT_TIME} seconds - falling back to AP mode.")
+    start_access_point()
+
+
+if __name__ == "__main__":
+    main()
