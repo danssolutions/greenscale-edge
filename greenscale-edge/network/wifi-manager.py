@@ -4,20 +4,8 @@ import time
 import socket
 import subprocess
 import uuid
-import logging
 import sys
 from pathlib import Path
-
-# Setup logging
-LOG_FILE = "/var/log/greenscale-wifi-manager.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(LOG_FILE)
-    ]
-)
 
 # Configuration via environment vars
 INTERFACE = os.getenv("WIFI_IFACE", "wlan0")
@@ -30,7 +18,6 @@ def get_device_id():
         mac = uuid.getnode()
         return f"{mac & 0xFFFF:04X}"
     except Exception as e:
-        logging.warning(f"Could not get MAC device id: {e}")
         return str(uuid.uuid4())[:4]
 
 
@@ -56,18 +43,12 @@ def get_ap_ip():
                 return ip
         return None
     except Exception as e:
-        logging.error(f"Error getting IP for {INTERFACE}: {e}")
         return None
 
 
 def start_access_point():
     dev_id = get_device_id()
     ssid = f"{AP_BASE_SSID}-{dev_id}"
-    logging.info(
-        "Enabling Access Point mode on %s, SSID=%s (open network)",
-        INTERFACE,
-        ssid,
-    )
 
     # Delete existing connection with this SSID (if any)
     subprocess.run(["nmcli", "connection", "delete", ssid], check=False)
@@ -91,49 +72,32 @@ def start_access_point():
 
     time.sleep(3)  # give interface time to settle
     ap_ip = get_ap_ip()
-    if ap_ip:
-        logging.info(
-            "AP mode active. Connect to SSID '%s' and browse to http://%s/",
-            ssid,
-            ap_ip,
-        )
-    else:
-        logging.warning("AP mode active but could not determine gateway IP!")
 
     # Launch config portal UI
     script_dir = Path(__file__).resolve().parent
     script_path = script_dir / "app.py"
     if script_path.exists():
-        logging.info("Starting configuration portal UI...")
         proc = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=str(script_dir),
         )
-        logging.info(f"Config portal process started (PID={proc.pid})")
-    else:
-        logging.warning(f"Config UI script not found at {script_path}")
 
     # Keep this script alive so service doesn’t exit
-    logging.info("Entering keep-alive loop so UI stays available.")
     try:
         while True:
             time.sleep(60)
     except KeyboardInterrupt:
-        logging.info("Keep-alive loop interrupted, exiting.")
+        pass
 
 
 def main():
-    logging.info("Starting WiFi Manager - checking connectivity.")
     waited = 0
     while waited < WAIT_TIME:
         if wifi_connected():
-            logging.info("WiFi detected - normal mode.")
             return
         time.sleep(1)
         waited += 1
 
-    logging.info(
-        f"No WiFi within {WAIT_TIME} seconds - falling back to AP mode.")
     start_access_point()
 
 
