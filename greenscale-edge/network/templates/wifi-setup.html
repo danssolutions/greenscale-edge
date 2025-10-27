@@ -11,10 +11,41 @@
   {% endif %}
   <form method="post">
     <label for="ssid">SSID:</label><br>
-    <input type="text" id="ssid" name="ssid"><br><br>
-    <label for="password">Password:</label><br>
-    <input type="password" id="password" name="password"><br><br>
+    <input type="text" id="ssid" name="ssid" value="{{ form_data.ssid }}"><br><br>
+
+    <label for="auth_type">Authentication Type:</label><br>
+    <select id="auth_type" name="auth_type" onchange="toggleAuthFields()">
+      <option value="psk" {% if form_data.auth_type == "psk" %}selected{% endif %}>WPA-PSK</option>
+      <option value="eap" {% if form_data.auth_type == "eap" %}selected{% endif %}>WPA-EAP (802.1x)</option>
+    </select><br><br>
+
+    <div id="psk-fields">
+      <label for="password">Password:</label><br>
+      <input type="password" id="password" name="password" value="{{ form_data.password }}"><br><br>
+    </div>
+
+    <div id="eap-fields">
+      <label for="identity">Identity / Username:</label><br>
+      <input type="text" id="identity" name="identity" value="{{ form_data.identity }}"><br><br>
+
+      <label for="eap_password">Password:</label><br>
+      <input type="password" id="eap_password" name="eap_password" value="{{ form_data.eap_password }}"><br><br>
+
+      <label for="ca_cert">CA Certificate (PEM, optional):</label><br>
+      <textarea id="ca_cert" name="ca_cert" rows="5" cols="40">{{ form_data.ca_cert }}</textarea><br><br>
+    </div>
+
     <input type="submit" value="Save & Connect">
   </form>
+
+  <script>
+    function toggleAuthFields() {
+      var authType = document.getElementById("auth_type").value;
+      document.getElementById("psk-fields").style.display = authType === "psk" ? "block" : "none";
+      document.getElementById("eap-fields").style.display = authType === "eap" ? "block" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", toggleAuthFields);
+  </script>
 </body>
 </html>
