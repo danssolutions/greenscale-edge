@@ -20,9 +20,10 @@ logging.basicConfig(
 )
 
 # Configuration via environment vars
-INTERFACE    = os.getenv("WIFI_IFACE", "wlan0")
-WAIT_TIME    = int(os.getenv("WIFI_WAIT_SEC", "30"))
+INTERFACE = os.getenv("WIFI_IFACE", "wlan0")
+WAIT_TIME = int(os.getenv("WIFI_WAIT_SEC", "30"))
 AP_BASE_SSID = os.getenv("AP_BASE_SSID", "Greenscale")
+
 
 def get_device_id():
     try:
@@ -32,12 +33,14 @@ def get_device_id():
         logging.warning(f"Could not get MAC device id: {e}")
         return str(uuid.uuid4())[:4]
 
+
 def wifi_connected():
     try:
         socket.create_connection(("8.8.8.8", 53), 2)
         return True
     except OSError:
         return False
+
 
 def get_ap_ip():
     try:
@@ -56,10 +59,12 @@ def get_ap_ip():
         logging.error(f"Error getting IP for {INTERFACE}: {e}")
         return None
 
+
 def start_access_point():
     dev_id = get_device_id()
-    ssid   = f"{AP_BASE_SSID}-{dev_id}"
-    logging.info(f"Enabling Access Point mode on {INTERFACE}, SSID={ssid} (open network)")
+    ssid = f"{AP_BASE_SSID}-{dev_id}"
+    logging.info(
+        f"Enabling Access Point mode on {INTERFACE}, SSID={ssid} (open network)")
 
     # Delete existing connection with this SSID (if any)
     subprocess.run(["nmcli", "connection", "delete", ssid], check=False)
@@ -84,7 +89,8 @@ def start_access_point():
     time.sleep(3)  # give interface time to settle
     ap_ip = get_ap_ip()
     if ap_ip:
-        logging.info(f"AP mode active. Connect to SSID '{ssid}' and browse to http://{ap_ip}/")
+        logging.info(
+            f"AP mode active. Connect to SSID '{ssid}' and browse to http://{ap_ip}/")
     else:
         logging.warning("AP mode active but could not determine gateway IP!")
 
@@ -105,6 +111,7 @@ def start_access_point():
     except KeyboardInterrupt:
         logging.info("Keep-alive loop interrupted, exiting.")
 
+
 def main():
     logging.info("Starting WiFi Manager — checking connectivity.")
     waited = 0
@@ -115,8 +122,10 @@ def main():
         time.sleep(1)
         waited += 1
 
-    logging.info(f"No WiFi within {WAIT_TIME} seconds — falling back to AP mode.")
+    logging.info(
+        f"No WiFi within {WAIT_TIME} seconds — falling back to AP mode.")
     start_access_point()
+
 
 if __name__ == "__main__":
     main()
