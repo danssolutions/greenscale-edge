@@ -6,7 +6,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/user/greenscale-edge/network_manager/wifi_manager.py
+ExecStart=/usr/bin/python3 /home/user/greenscale-edge/greenscale-edge/network/wifi-manager.py
 Restart=on-failure
 RestartSec=10
 User=root

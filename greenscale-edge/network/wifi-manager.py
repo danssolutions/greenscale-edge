@@ -64,7 +64,10 @@ def start_access_point():
     dev_id = get_device_id()
     ssid = f"{AP_BASE_SSID}-{dev_id}"
     logging.info(
-        f"Enabling Access Point mode on {INTERFACE}, SSID={ssid} (open network)")
+        "Enabling Access Point mode on %s, SSID=%s (open network)",
+        INTERFACE,
+        ssid,
+    )
 
     # Delete existing connection with this SSID (if any)
     subprocess.run(["nmcli", "connection", "delete", ssid], check=False)
@@ -90,15 +93,22 @@ def start_access_point():
     ap_ip = get_ap_ip()
     if ap_ip:
         logging.info(
-            f"AP mode active. Connect to SSID '{ssid}' and browse to http://{ap_ip}/")
+            "AP mode active. Connect to SSID '%s' and browse to http://%s/",
+            ssid,
+            ap_ip,
+        )
     else:
         logging.warning("AP mode active but could not determine gateway IP!")
 
     # Launch config portal UI
-    script_path = Path(__file__).parent / "web_config" / "app.py"
+    script_dir = Path(__file__).resolve().parent
+    script_path = script_dir / "app.py"
     if script_path.exists():
-        logging.info("Starting configuration portal UI …")
-        proc = subprocess.Popen(["python3", str(script_path)])
+        logging.info("Starting configuration portal UI...")
+        proc = subprocess.Popen(
+            [sys.executable, str(script_path)],
+            cwd=str(script_dir),
+        )
         logging.info(f"Config portal process started (PID={proc.pid})")
     else:
         logging.warning(f"Config UI script not found at {script_path}")
@@ -113,19 +123,14 @@ def start_access_point():
 
 
 def main():
-    logging.info("Starting WiFi Manager — checking connectivity.")
+    logging.info("Starting WiFi Manager - checking connectivity.")
     waited = 0
     while waited < WAIT_TIME:
         if wifi_connected():
-            logging.info("WiFi detected — normal mode.")
+            logging.info("WiFi detected - normal mode.")
             return
         time.sleep(1)
         waited += 1
 
     logging.info(
-        f"No WiFi within {WAIT_TIME} seconds — falling back to AP mode.")
-    start_access_point()
-
-
-if __name__ == "__main__":
-    main()
+        f"No WiFi within {WAIT_TIME} seconds - falling back to AP mode.")
