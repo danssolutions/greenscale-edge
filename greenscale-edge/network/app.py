@@ -197,7 +197,7 @@ def wifi_setup():
         form_data["password"] = ""
         form_data["eap_password"] = ""
 
-    return render_template("wifi-setup.html", error=error, form_data=form_data)
+    return render_template("wifi_setup.html", error=error, form_data=form_data)
 
 
 @app.route("/success")

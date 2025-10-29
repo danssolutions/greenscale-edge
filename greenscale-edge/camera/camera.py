@@ -7,8 +7,6 @@ Pi Camera Module 3's full still resolution (4608x2592) and save it as a PNG
 image inside the ``snapshots`` directory at the project root.
 """
 
-from __future__ import annotations
-
 import datetime
 from pathlib import Path
 import time
