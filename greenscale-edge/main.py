@@ -62,7 +62,7 @@ def build_payload(sensor_data, camera_data):
 
 # === Main Loop ===
 def main():
-    publisher = MQTTPublisher(BROKER_HOST, TOPIC)
+    publisher = MQTTPublisher(cfg["broker_host"], TOPIC)
     publisher.connect()
 
     print(f"[INFO] Starting Greenscale Edge node '{DEVICE_ID}'")
@@ -72,14 +72,12 @@ def main():
             mtime = CFG_PATH.stat().st_mtime
             if mtime != last_mtime:
                 cfg = load_config()
-                BROKER_HOST = cfg["broker_host"]
-                PUBLISH_INTERVAL = cfg["publish_interval"]
                 last_mtime = mtime
             sensors = collect_sensor_data()
             camera = collect_camera_data()
             payload = build_payload(sensors, camera)
             publisher.publish(payload)
-            time.sleep(PUBLISH_INTERVAL)
+            time.sleep(cfg["publish_interval"])
         except KeyboardInterrupt:
             print("[INFO] Exiting...")
             break
