@@ -9,7 +9,7 @@ ExecStart=/usr/bin/python3 /home/user/greenscale-edge/greenscale-edge/main.py
 WorkingDirectory=/home/user/greenscale-edge/greenscale-edge
 Restart=on-failure
 RestartSec=10
-User=pi
+User=user
 Environment="PYTHONUNBUFFERED=1"
 # Optional override for custom device ID:
 # Environment="DEVICE_ID=edge-test01"

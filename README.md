@@ -5,6 +5,7 @@
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y network-manager python3-pip python3-picamera2 libcamera-apps python3-opencv python3-flask python3-paho-mqtt
+sudo cp ~/greenscale-edge/systemd/greenscale-auto-ap.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-main.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-config.service /etc/systemd/system/
 sudo systemctl daemon-reload
