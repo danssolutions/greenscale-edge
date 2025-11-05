@@ -1,7 +1,7 @@
 import os
 import socket
 import time
-from datetime import datetime
+from datetime import datetime, UTC
 from network.mqtt import MQTTPublisher
 from sensors import temp_sensor, ph_sensor, do_sensor, turbidity_sensor
 
@@ -37,7 +37,7 @@ def build_payload(sensor_data, camera_data):
     return {
         "version": 1,
         "device_id": DEVICE_ID,
-        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "status": {
             "online": True,
             "uptime_sec": int(time.monotonic()),

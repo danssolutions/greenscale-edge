@@ -1,182 +1,95 @@
 #!/usr/bin/env python3
+"""
+Greenscale Wi-Fi Manager
+------------------------
+- Connects to known Wi-Fi profiles on boot.
+- Starts access point + setup portal if none are available.
+"""
+
 import logging
 import os
 import time
-import socket
 import subprocess
-import uuid
 import sys
+import hashlib
 from pathlib import Path
 
-# Configuration via environment vars
+# --- Configuration ---
 INTERFACE = os.getenv("WIFI_IFACE", "wlan0")
-WAIT_TIME = int(os.getenv("WIFI_WAIT_SEC", "30"))
+WAIT_TIME = int(os.getenv("WIFI_WAIT_SEC", "20"))
 AP_BASE_SSID = os.getenv("AP_BASE_SSID", "Greenscale")
-
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
-logger = logging.getLogger(__name__)
+log = logging.getLogger("wifi_manager")
+
+# --- Helpers ---------------------------------------------------------------
 
 
-def get_device_id():
+def get_device_id() -> str:
+    """Generate stable 4-char device suffix from /etc/machine-id."""
     try:
-        mac = uuid.getnode()
-        return f"{mac & 0xFFFF:04X}"
+        mid = Path("/etc/machine-id").read_text().strip()
+        return hashlib.sha1(mid.encode()).hexdigest()[:4].upper()
     except Exception:
-        return str(uuid.uuid4())[:4]
+        return "0000"
 
 
-def wifi_connected():
+def wifi_connected() -> bool:
+    """Return True if wlan0 is connected to any network."""
     try:
-        socket.create_connection(("8.8.8.8", 53), 2)
-        return True
-    except OSError:
-        return False
-
-
-def list_saved_wifi_connections():
-    try:
-        result = subprocess.run(
-            ["nmcli", "-t", "-f", "NAME,TYPE,DEVICE", "connection", "show"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
-        logger.error("nmcli not found; cannot query saved Wi-Fi profiles")
-        return []
-
-    if result.returncode != 0:
-        logger.warning(
-            "Failed to list saved connections (rc=%s): %s",
-            result.returncode,
-            result.stderr.strip(),
-        )
-        return []
-
-    wifi_connections = []
-    for line in result.stdout.splitlines():
-        if not line:
-            continue
-        parts = line.split(":")
-        if len(parts) < 2:
-            continue
-        name = parts[0]
-        conn_type = parts[1]
-        if conn_type in {"wifi", "802-11-wireless"}:
-            wifi_connections.append(name)
-
-    return wifi_connections
-
-
-def get_connection_state(name):
-    try:
-        result = subprocess.run(
-            ["nmcli", "-t", "-f", "GENERAL.STATE", "connection", "show", name],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
-        return None
-
-    if result.returncode != 0:
-        return None
-
-    state_line = result.stdout.strip()
-    if not state_line:
-        return None
-
-    # Expected format: GENERAL.STATE:activated (or similar)
-    if ":" in state_line:
-        _, value = state_line.split(":", 1)
-    else:
-        value = state_line
-    return value.strip()
-
-
-def activate_wifi_connection(name):
-    logger.info("Attempting to activate Wi-Fi profile '%s'", name)
-
-    try:
-        result = subprocess.run(
-            ["nmcli", "connection", "up", name],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
-        logger.error(
-            "nmcli not found; cannot activate Wi-Fi profile '%s'",
-            name,
-        )
-        return False
-
-    if result.returncode != 0:
-        logger.warning(
-            "Activation of '%s' failed (rc=%s): %s",
-            name,
-            result.returncode,
-            result.stderr.strip() or result.stdout.strip(),
-        )
-    else:
-        logger.info("nmcli accepted activation command for '%s'", name)
-
-    wait_seconds = max(0, WAIT_TIME)
-    for _ in range(wait_seconds):
-        if wifi_connected():
-            logger.info(
-                "Wi-Fi connection established after activating '%s'",
-                name,
-            )
-            return True
-        time.sleep(1)
-
-    state = get_connection_state(name)
-    if state:
-        logger.info(
-            "Connection '%s' state after activation attempt: %s",
-            name,
-            state,
-        )
-    else:
-        logger.info("Unable to determine connection state for '%s'", name)
-
-    return wifi_connected()
-
-
-def get_ap_ip():
-    try:
-        result = subprocess.run(
-            ["ip", "addr", "show", INTERFACE],
+        res = subprocess.run(
+            ["nmcli", "-t", "-f", "DEVICE,STATE", "device"],
             capture_output=True, text=True, check=False
         )
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if line.startswith("inet "):
-                ip_cidr = line.split()[1]
-                ip = ip_cidr.split("/")[0]
-                return ip
-        return None
-    except Exception:
-        return None
+        return any(f"{INTERFACE}:connected" in line for line in res.stdout.splitlines())
+    except Exception as e:
+        log.warning("Wi-Fi check failed: %s", e)
+        return False
+
+
+def list_wifi_profiles():
+    """List saved Wi-Fi profiles."""
+    try:
+        res = subprocess.run(
+            ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"],
+            capture_output=True, text=True
+        )
+        return [line.split(":")[0] for line in res.stdout.splitlines() if ":wifi" in line]
+    except Exception as e:
+        log.error("Unable to list Wi-Fi profiles: %s", e)
+        return []
+
+
+def activate_profile(name: str) -> bool:
+    """Try to bring up a known Wi-Fi connection."""
+    log.info("Activating Wi-Fi profile '%s'...", name)
+    subprocess.run(["nmcli", "connection", "up", name], check=False)
+    for _ in range(WAIT_TIME):
+        if wifi_connected():
+            log.info("Connected using profile '%s'", name)
+            return True
+        time.sleep(1)
+    log.warning("Failed to connect using '%s'", name)
+    return False
+
+# --- Access Point ----------------------------------------------------------
 
 
 def start_access_point():
+    """Create and start the fallback access point + config portal."""
     dev_id = get_device_id()
     ssid = f"{AP_BASE_SSID}-{dev_id}"
 
-    # Delete existing connection with this SSID (if any)
+    # Delete any old connection with same SSID
     subprocess.run(["nmcli", "connection", "delete", ssid], check=False)
 
-    # Create new open AP connection
+    log.info("Starting access point '%s'...", ssid)
     subprocess.run([
         "nmcli", "connection", "add",
-        "type", "wifi",
-        "ifname", INTERFACE,
+        "type", "wifi", "ifname", INTERFACE,
         "con-name", ssid,
         "autoconnect", "yes",
         "ssid", ssid,
@@ -186,59 +99,45 @@ def start_access_point():
         "ipv6.method", "ignore"
     ], check=False)
 
-    # Bring it up
     subprocess.run(["nmcli", "connection", "up", ssid], check=False)
+    time.sleep(3)
 
-    time.sleep(3)  # give interface time to settle
-    ap_ip = get_ap_ip()
-    if ap_ip:
-        logger.info("Access point started on %s with SSID '%s'", ap_ip, ssid)
+    log.info("Access point '%s' active. Launching config portal...", ssid)
+    portal = Path(__file__).resolve().parent / "app.py"
+    if portal.exists():
+        subprocess.Popen([sys.executable, str(portal)], cwd=str(portal.parent))
     else:
-        logger.info("Access point started with SSID '%s'", ssid)
+        log.warning("Portal app.py not found!")
 
-    # Launch config portal UI
-    script_dir = Path(__file__).resolve().parent
-    script_path = script_dir / "app.py"
-    if script_path.exists():
-        logger.info("Launching configuration portal UI from %s", script_path)
-        subprocess.Popen(
-            [sys.executable, str(script_path)],
-            cwd=str(script_dir),
-        )
+    # Keep alive indefinitely
+    while True:
+        time.sleep(60)
 
-    # Keep this script alive so service doesn’t exit
-    try:
-        while True:
-            time.sleep(60)
-    except KeyboardInterrupt:
-        pass
+# --- Main ------------------------------------------------------------------
 
 
 def main():
     if wifi_connected():
-        logger.info("Wi-Fi already connected; skipping AP setup")
+        log.info("Wi-Fi already connected.")
         return
 
-    wifi_profiles = list_saved_wifi_connections()
-    if not wifi_profiles:
-        logger.info("No saved Wi-Fi profiles found")
+    profiles = list_wifi_profiles()
+    if profiles:
+        log.info("Found saved profiles: %s", ", ".join(profiles))
+        for p in profiles:
+            if activate_profile(p):
+                return
     else:
-        logger.info("Found %d saved Wi-Fi profiles", len(wifi_profiles))
-        logger.info("Attempt order: %s", ", ".join(wifi_profiles))
-
-    for profile in wifi_profiles:
-        if activate_wifi_connection(profile):
-            logger.info("Connected to Wi-Fi using profile '%s'", profile)
-            return
+        log.info("No saved profiles found.")
 
     if wifi_connected():
-        logger.info("Wi-Fi connection succeeded without AP")
+        log.info("Wi-Fi connection established.")
         return
 
-    logger.warning(
-        "Failed to establish Wi-Fi connection; starting access point"
-    )
+    log.warning("No active Wi-Fi. Starting fallback access point...")
     start_access_point()
+
+# ---------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
