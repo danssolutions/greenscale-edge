@@ -202,10 +202,12 @@ def wifi_setup():
 
 @app.route("/success")
 def success():
-    return (
-        "Configuration saved. Attempting to connect to network. "
-        "You may now disconnect from the hotspot."
-    )
+    import socket
+    import subprocess
+    hostname = socket.gethostname()
+    res = subprocess.run(["hostname", "-I"], capture_output=True, text=True)
+    ips = res.stdout.strip().split()
+    return render_template("wifi_success.html", hostname=hostname, ips=ips)
 
 
 if __name__ == "__main__":

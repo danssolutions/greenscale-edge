@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Greenscale – Connected</title></head>
+<body>
+  <h1>Connection Successful</h1>
+  <p>The device is now connecting to your Wi-Fi network.</p>
+  <p>Once the hotspot disappears, reconnect your computer or phone
+     to the same Wi-Fi network you selected and visit:</p>
+
+  <ul>
+    <li><strong>Hostname:</strong> <code>{{ hostname }}.local</code></li>
+    {% if ips %}
+      <li><strong>Detected IPs:</strong>
+        <ul>{% for ip in ips %}<li><a href="http://{{ ip }}">http://{{ ip }}</a></li>{% endfor %}</ul>
+      </li>
+    {% endif %}
+  </ul>
+
+  <p>The Greenscale configuration dashboard will be available there.</p>
+</body>
+</html>
