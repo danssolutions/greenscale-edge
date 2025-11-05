@@ -22,7 +22,7 @@ app = Flask(
     __name__,
     template_folder=str(TEMPLATE_DIR),
 )
-CONFIG_PATH = Path("/home/user/greenscale-edge/config.json")
+CONFIG_PATH = Path("/home/user/greenscale-edge/greenscale-edge/config.json")
 
 
 @app.route("/config", methods=["GET", "POST"])
