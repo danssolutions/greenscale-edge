@@ -127,8 +127,7 @@ def wifi_setup():
 
                     if ca_cert_path:
                         cmd += ["802-1x.ca-cert", ca_cert_path]
-                    result = _run_nmcli(
-                        ["connection", "modify", connection_name, *cmd[2:]])
+                    result = _run_nmcli(cmd)
                     if result.returncode != 0:
                         error = (result.stderr.strip() or result.stdout.strip()
                                  or "Failed to configure WPA-EAP profile.")
