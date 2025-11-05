@@ -8,7 +8,8 @@ import json
 import pathlib
 
 
-CFG_PATH = pathlib.Path("/home/user/greenscale-edge/config.json")
+CFG_PATH = pathlib.Path(
+    "/home/user/greenscale-edge/greenscale-edge/config.json")
 
 
 def load_config():
