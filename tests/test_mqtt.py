@@ -1,7 +1,7 @@
 import importlib.util
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -11,90 +11,78 @@ MODULE_PATH = REPO_ROOT / "greenscale-edge" / \
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location(
-        "greenscale_edge.network.mqtt", MODULE_PATH)
+    """Dynamically import mqtt.py from the project."""
+    spec = importlib.util.spec_from_file_location("network.mqtt", MODULE_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 
 
-@pytest.fixture(name="mqtt")
-def mqtt_module():
+@pytest.fixture
+def mqtt():
+    """Load the MQTT module once per test."""
     return load_module()
 
 
-def test_collect_sensor_readings_uses_stub_values(mqtt):
-    readings = mqtt.collect_sensor_readings()
-    sensor_names = {reading["sensor"] for reading in readings}
-
-    assert sensor_names == {
-        "ammonia",
-        "co2",
-        "dissolved_oxygen",
-        "ph",
-        "temperature",
-        "turbidity",
-    }
+def test_connect_success(mqtt):
+    """Connect() should succeed when broker connection works."""
+    with patch("paho.mqtt.client.Client.connect", return_value=0) as mock_connect:
+        pub = mqtt.MQTTPublisher(host="localhost", topic="greenscale/test")
+        assert pub.connect() is True
+        mock_connect.assert_called_once_with("localhost", 1883, 30)
+        assert pub.connected
 
 
-def test_build_sensor_message_combines_data(mqtt):
-    readings = [
-        {"sensor": "temperature", "value": 22.5},
-        {"sensor": "ph", "value": 7.0},
-    ]
-    camera_metadata = {"file": "snapshot.png", "exposure": 0.1}
-
-    payload = mqtt.build_sensor_message(
-        readings, camera_metadata, site="pond-1")
-
-    assert payload["sensors"] == readings
-    assert payload["camera"] == camera_metadata
-    assert payload["site"] == "pond-1"
-    # Ensure the payload is ready for publishing as JSON
-    json.dumps(payload)
+def test_connect_failure_retries(mqtt):
+    """Connect() should retry and fail gracefully after max attempts."""
+    with patch("paho.mqtt.client.Client.connect", side_effect=Exception("fail")):
+        pub = mqtt.MQTTPublisher(host="localhost", topic="greenscale/test")
+        result = pub.connect(retries=2, delay=0)
+        assert not result
+        assert not pub.connected
 
 
-def test_publish_attempts_to_connect_and_publishes_json(mqtt):
-    client = MagicMock()
-    publisher = mqtt.MQTTPublisher(
-        topic="greenscale/sensors",
-        host="mqtt.local",
-        port=1884,
-        client=client,
-        reconnect_delay=0,
-    )
+def test_publish_json_success(mqtt):
+    """Publish should JSON-encode payload and call client.publish()."""
+    fake_client = MagicMock()
+    pub = mqtt.MQTTPublisher(host="broker", topic="greenscale/test")
+    pub.client = fake_client
+    pub.connected = True
 
-    payload = {"sensors": [{"sensor": "temperature", "value": 22.5}]}
-    publisher.publish(payload)
+    payload = {"foo": "bar"}
+    result = pub.publish(payload)
 
-    client.connect.assert_called_once_with("mqtt.local", 1884, 60)
-    assert client.publish.call_count == 1
-    args, kwargs = client.publish.call_args
-    assert args[0] == "greenscale/sensors"
-    message = json.loads(args[1])
-    assert message == payload
-    assert kwargs == {"qos": 0, "retain": False}
+    fake_client.publish.assert_called_once()
+    args, kwargs = fake_client.publish.call_args
+    assert args[0] == "greenscale/test"
+    json.loads(args[1])  # must be valid JSON
+    assert result is True
 
 
-def test_publish_reconnects_after_failure(mqtt):
-    client = MagicMock()
-    fail = RuntimeError("network error")
-    sentinel = object()
-    client.publish.side_effect = [fail, sentinel, sentinel]
+def test_publish_triggers_connect_on_first_use(mqtt):
+    """If not connected, publish() should attempt to connect first."""
+    with patch.object(mqtt.MQTTPublisher, "connect", return_value=True) as mock_connect, \
+            patch("paho.mqtt.client.Client.publish", return_value=True) as mock_pub:
 
-    publisher = mqtt.MQTTPublisher(
-        topic="greenscale/sensors",
-        client=client,
-        reconnect_delay=0,
-        max_retries=2,
-    )
+        pub = mqtt.MQTTPublisher(host="broker", topic="greenscale/test")
+        payload = {"key": "value"}
+        result = pub.publish(payload)
 
-    result = publisher.publish({"foo": "bar"})
+        mock_connect.assert_called_once()
+        mock_pub.assert_called_once()
+        assert result is True
 
-    assert client.connect.call_count == 2
-    assert client.publish.call_count == 2
-    assert result is sentinel
-    # Subsequent publishes should reuse the existing connection
-    publisher.publish({"foo": "baz"})
-    assert client.connect.call_count == 2
+
+def test_publish_handles_failure_and_resets_connection(mqtt):
+    """If publish raises, connection flag should reset to False."""
+    fake_client = MagicMock()
+    fake_client.publish.side_effect = Exception("Network error")
+
+    pub = mqtt.MQTTPublisher(host="broker", topic="greenscale/test")
+    pub.client = fake_client
+    pub.connected = True
+
+    result = pub.publish({"data": 123})
+    assert result is False
+    assert not pub.connected

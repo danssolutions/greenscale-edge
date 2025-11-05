@@ -1,12 +1,13 @@
-DUMMY_TURBIDITY = {
-    "sensor": "turbidity",
-    "value": 1.2,
-    "units": "NTU",
-    "status": "ok",
-    "timestamp": "2024-01-01T00:00:00Z",
-}
+import random
+from datetime import datetime
 
 
 def read():
-    """Return a deterministic turbidity reading."""
-    return dict(DUMMY_TURBIDITY)
+    """Simulate turbidity sensor reading in NTU."""
+    return {
+        "sensor": "turbidity",
+        "value": round(2.4 + random.uniform(-0.2, 0.2), 2),
+        "units": "NTU",
+        "status": "ok",
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }

@@ -1,12 +1,13 @@
-DUMMY_PH = {
-    "sensor": "ph",
-    "value": 7.0,
-    "units": "pH",
-    "status": "ok",
-    "timestamp": "2024-01-01T00:00:00Z",
-}
+import random
+from datetime import datetime
 
 
 def read():
-    """Return a deterministic pH reading."""
-    return dict(DUMMY_PH)
+    """Simulate pH sensor reading."""
+    return {
+        "sensor": "ph",
+        "value": round(7.0 + random.uniform(-0.1, 0.1), 2),
+        "units": "pH",
+        "status": "ok",
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }

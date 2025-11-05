@@ -1,12 +1,13 @@
-DUMMY_TEMP = {
-    "sensor": "temperature",
-    "value": 22.5,
-    "units": "degC",
-    "status": "ok",
-    "timestamp": "2024-01-01T00:00:00Z",
-}
+import random
+from datetime import datetime
 
 
 def read():
-    """Return a deterministic temperature reading."""
-    return dict(DUMMY_TEMP)
+    """Simulate temperature sensor reading in degrees Celsius."""
+    return {
+        "sensor": "temperature",
+        "value": round(22.0 + random.uniform(-0.4, 0.4), 2),
+        "units": "degC",
+        "status": "ok",
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }

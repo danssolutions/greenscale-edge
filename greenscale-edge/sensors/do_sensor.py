@@ -1,12 +1,13 @@
-DUMMY_DO = {
-    "sensor": "dissolved_oxygen",
-    "value": 7.5,
-    "units": "mg/L",
-    "status": "ok",
-    "timestamp": "2024-01-01T00:00:00Z",
-}
+import random
+from datetime import datetime
 
 
 def read():
-    """Return a deterministic DO reading."""
-    return dict(DUMMY_DO)
+    """Simulate dissolved oxygen (DO) reading in mg/L."""
+    return {
+        "sensor": "dissolved_oxygen",
+        "value": round(7.5 + random.uniform(-0.3, 0.3), 2),
+        "units": "mg/L",
+        "status": "ok",
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }

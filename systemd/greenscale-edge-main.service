@@ -1,0 +1,20 @@
+[Unit]
+Description=Greenscale Edge Main Service
+After=network-online.target greenscale-auto-ap.service
+Wants=network-online.target greenscale-auto-ap.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/greenscale-edge/main.py
+WorkingDirectory=/home/pi/greenscale-edge
+Restart=on-failure
+RestartSec=10
+User=pi
+Environment="PYTHONUNBUFFERED=1"
+# Optional override for custom device ID:
+# Environment="DEVICE_ID=edge-test01"
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
