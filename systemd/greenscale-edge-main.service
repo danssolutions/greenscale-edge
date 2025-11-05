@@ -5,8 +5,8 @@ Wants=network-online.target greenscale-auto-ap.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/pi/greenscale-edge/main.py
-WorkingDirectory=/home/pi/greenscale-edge
+ExecStart=/usr/bin/python3 /home/user/greenscale-edge/greenscale-edge/main.py
+WorkingDirectory=/home/user/greenscale-edge/greenscale-edge
 Restart=on-failure
 RestartSec=10
 User=pi
