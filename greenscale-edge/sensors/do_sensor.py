@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 def read():
@@ -9,5 +9,5 @@ def read():
         "value": round(7.5 + random.uniform(-0.3, 0.3), 2),
         "units": "mg/L",
         "status": "ok",
-        "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }

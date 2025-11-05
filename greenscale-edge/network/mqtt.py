@@ -11,7 +11,8 @@ class MQTTPublisher:
         self.port = port
         self.topic = topic
         self.keepalive = keepalive
-        self.client = mqtt.Client()
+        self.client = mqtt.Client(
+            callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.connected = False
 
     def connect(self, retries=3, delay=2):
