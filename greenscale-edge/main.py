@@ -62,6 +62,7 @@ def build_payload(sensor_data, camera_data):
 
 # === Main Loop ===
 def main():
+    global cfg
     publisher = MQTTPublisher(cfg["broker_host"], TOPIC)
     publisher.connect()
 
