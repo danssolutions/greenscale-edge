@@ -1,7 +1,6 @@
 [Unit]
 Description=Greenscale WiFi Auto Access Point Manager
 After=network-pre.target
-Before=network-online.target
 Wants=network-online.target
 
 [Service]
