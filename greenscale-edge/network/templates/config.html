@@ -1,0 +1,10 @@
+<!doctype html>
+<title>Edge Config</title>
+<h2>Device Configuration</h2>
+{% if ok %}<p style="color:green;">Saved!</p>{% endif %}
+<form method="post">
+  MQTT broker: <input name="broker_host" value="{{ config.broker_host }}"><br>
+  Publish interval (s): <input name="publish_interval" value="{{ config.publish_interval }}"><br>
+  Device name: <input name="device_name" value="{{ config.device_name }}"><br>
+  <button type="submit">Save</button>
+</form>

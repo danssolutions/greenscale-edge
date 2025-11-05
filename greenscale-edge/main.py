@@ -4,12 +4,25 @@ import time
 from datetime import datetime, UTC
 from network.mqtt import MQTTPublisher
 from sensors import temp_sensor, ph_sensor, do_sensor, turbidity_sensor
+import json
+import pathlib
 
-# === Configuration ===
-BROKER_HOST = "192.168.1.100"  # Change to your server IP
+
+CFG_PATH = pathlib.Path("/home/user/greenscale-edge/config.json")
+
+
+def load_config():
+    if CFG_PATH.exists():
+        with CFG_PATH.open() as f:
+            return json.load(f)
+    return {"broker_host": "192.168.1.100", "publish_interval": 10}
+
+
+cfg = load_config()
+BROKER_HOST = cfg["broker_host"]
+PUBLISH_INTERVAL = cfg["publish_interval"]
 DEVICE_ID = os.getenv("DEVICE_ID", socket.gethostname())
 TOPIC = f"greenscale/{DEVICE_ID}/telemetry"
-PUBLISH_INTERVAL = 10  # seconds
 
 
 # === Data Collection ===
@@ -53,8 +66,15 @@ def main():
     publisher.connect()
 
     print(f"[INFO] Starting Greenscale Edge node '{DEVICE_ID}'")
+    last_mtime = 0
     while True:
         try:
+            mtime = CFG_PATH.stat().st_mtime
+            if mtime != last_mtime:
+                cfg = load_config()
+                BROKER_HOST = cfg["broker_host"]
+                PUBLISH_INTERVAL = cfg["publish_interval"]
+                last_mtime = mtime
             sensors = collect_sensor_data()
             camera = collect_camera_data()
             payload = build_payload(sensors, camera)

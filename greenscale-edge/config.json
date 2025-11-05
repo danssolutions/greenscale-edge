@@ -1,0 +1,5 @@
+{
+  "broker_host": "test.mosquitto.org",
+  "publish_interval": 10,
+  "device_name": "edge01"
+}

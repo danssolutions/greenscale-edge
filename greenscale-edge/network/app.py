@@ -3,6 +3,7 @@ from pathlib import Path
 
 from flask import Flask, request, render_template, redirect
 import subprocess
+import json
 
 
 def _run_nmcli(args):
@@ -21,6 +22,25 @@ app = Flask(
     __name__,
     template_folder=str(TEMPLATE_DIR),
 )
+CONFIG_PATH = Path("/home/user/greenscale-edge/config.json")
+
+
+@app.route("/config", methods=["GET", "POST"])
+def config_page():
+    if request.method == "POST":
+        data = {
+            "broker_host": request.form.get("broker_host", "").strip(),
+            "publish_interval": int(request.form.get("publish_interval", "10")),
+            "device_name": request.form.get("device_name", "").strip(),
+        }
+        CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        return redirect("/config?ok=1")
+
+    current = {}
+    if CONFIG_PATH.exists():
+        current = json.loads(CONFIG_PATH.read_text())
+
+    return render_template("config.html", config=current, ok=request.args.get("ok"))
 
 
 @app.route("/", methods=["GET", "POST"])
