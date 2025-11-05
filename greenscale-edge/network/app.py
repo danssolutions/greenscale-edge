@@ -112,70 +112,26 @@ def wifi_setup():
                         cert_path.write_text(ca_cert_content)
                         ca_cert_path = str(cert_path)
 
-                    commands = [
-                        [
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-11-wireless-security.key-mgmt",
-                            "wpa-eap",
-                        ],
-                        [
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.eap",
-                            "peap",
-                        ],
-                        [
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.phase2-auth",
-                            "mschapv2",
-                        ],
-                        [
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.identity",
-                            identity,
-                        ],
-                        [
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.password",
-                            eap_password,
-                        ],
+                    cmd = [
+                        "connection", "modify", connection_name,
+                        # EAP block first so NM is happy:
+                        "802-1x.eap", "peap",
+                        "802-1x.phase2-auth", "mschapv2",
+                        "802-1x.identity", identity,
+                        "802-1x.password", eap_password,
+                        # now the key management:
+                        "wifi-sec.key-mgmt", "wpa-eap",
+                        # make it autoconnect:
+                        "connection.autoconnect", "yes",
                     ]
 
                     if ca_cert_path:
-                        commands.append([
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.ca-cert",
-                            ca_cert_path,
-                        ])
-                    else:
-                        commands.append([
-                            "connection",
-                            "modify",
-                            connection_name,
-                            "802-1x.ca-cert",
-                            "",
-                        ])
-
-                    for command in commands:
-                        result = _run_nmcli(command)
-                        if result.returncode != 0:
-                            error = (
-                                result.stderr.strip()
-                                or result.stdout.strip()
-                                or "Failed to configure WPA-EAP profile."
-                            )
-                            break
+                        cmd += ["802-1x.ca-cert", ca_cert_path]
+                    result = _run_nmcli(
+                        ["connection", "modify", connection_name, *cmd[2:]])
+                    if result.returncode != 0:
+                        error = (result.stderr.strip() or result.stdout.strip()
+                                 or "Failed to configure WPA-EAP profile.")
 
                 if error is None:
                     bring_up = _run_nmcli([
