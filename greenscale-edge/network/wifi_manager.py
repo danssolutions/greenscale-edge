@@ -117,29 +117,23 @@ def start_access_point():
 
 
 def main():
-    # if already connected, done
     if wifi_connected():
         log.info("Wi-Fi already connected.")
         return
 
     profiles = list_wifi_profiles()
-    connected = False
-
     if profiles:
         log.info("Found saved profiles: %s", ", ".join(profiles))
         for p in profiles:
             if activate_profile(p):
-                connected = True
-                break
+                return
     else:
         log.info("No saved profiles found.")
 
-    # If connection succeeded, stop here
-    if connected and wifi_connected():
+    if wifi_connected():
         log.info("Wi-Fi connection established.")
         return
 
-    # 🔻 Always fall back here if nothing worked
     log.warning("No active Wi-Fi. Starting fallback access point...")
     start_access_point()
 
