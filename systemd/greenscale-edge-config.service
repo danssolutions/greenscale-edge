@@ -1,0 +1,17 @@
+[Unit]
+Description=Greenscale Configuration Web Portal
+After=network.target
+Requires=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/greenscale-edge/greenscale-edge
+ExecStart=/usr/bin/python3 /home/user/greenscale-edge/greenscale-edge/network/app.py
+Restart=on-failure
+RestartSec=5
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
