@@ -30,10 +30,10 @@ TOPIC = f"greenscale/{DEVICE_ID}/telemetry"
 def collect_sensor_data():
     """Gather current readings from available sensors."""
     return {
-        "temperature_c": temp_sensor.read(),
-        "ph": ph_sensor.read(),
-        "do_mg_per_l": do_sensor.read(),
-        "turbidity_sensor_v": turbidity_sensor.read(),
+        "temperature_c": temp_sensor.read()["value"],
+        "ph": ph_sensor.read()["value"],
+        "do_mg_per_l": do_sensor.read()["value"],
+        "turbidity_sensor_v": turbidity_sensor.read()["value"],
     }
 
 
