@@ -8,20 +8,29 @@ import json
 import pathlib
 
 
-CFG_PATH = pathlib.Path(
-    "/home/user/greenscale-edge/greenscale-edge/config.json")
+CFG_PATH = pathlib.Path(os.environ.get(
+    "CONFIG_PATH",
+    "/home/user/greenscale-edge/greenscale-edge/config.json",
+))
 
 
 def load_config():
     if CFG_PATH.exists():
         with CFG_PATH.open() as f:
             return json.load(f)
-    return {"broker_host": "192.168.1.100", "publish_interval": 10}
+    return {
+        "broker_host": "192.168.1.100",
+        "publish_interval": 10,
+        "broker_username": None,
+        "broker_password": None,
+    }
 
 
 cfg = load_config()
-BROKER_HOST = cfg["broker_host"]
-PUBLISH_INTERVAL = cfg["publish_interval"]
+BROKER_HOST = cfg.get("broker_host", "192.168.1.100")
+BROKER_USERNAME = cfg.get("broker_username")
+BROKER_PASSWORD = cfg.get("broker_password")
+PUBLISH_INTERVAL = cfg.get("publish_interval", 10)
 DEVICE_ID = os.getenv("DEVICE_ID", socket.gethostname())
 TOPIC = f"greenscale/{DEVICE_ID}/telemetry"
 
@@ -64,7 +73,12 @@ def build_payload(sensor_data, camera_data):
 # === Main Loop ===
 def main():
     global cfg
-    publisher = MQTTPublisher(cfg["broker_host"], TOPIC)
+    publisher = MQTTPublisher(
+        cfg["broker_host"],
+        TOPIC,
+        username=cfg.get("broker_username"),
+        password=cfg.get("broker_password"),
+    )
     publisher.connect()
 
     print(f"[INFO] Starting Greenscale Edge node '{DEVICE_ID}'")

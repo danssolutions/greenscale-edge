@@ -1,5 +1,7 @@
 {
   "broker_host": "test.mosquitto.org",
   "publish_interval": 10,
-  "device_name": "edge01"
+  "device_name": "edge01",
+  "broker_username": null,
+  "broker_password": null
 }

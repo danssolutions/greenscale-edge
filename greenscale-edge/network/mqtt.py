@@ -19,6 +19,8 @@ class MQTTPublisher:
         client_cert=None,
         client_key=None,
         tls_insecure=False,
+        username=None,
+        password=None,
     ):
         self.host = host
         self.port = port
@@ -29,9 +31,17 @@ class MQTTPublisher:
         self.client_cert = client_cert
         self.client_key = client_key
         self.tls_insecure = tls_insecure
+        self.username = username
+        self.password = password
         self.client = mqtt.Client(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.connected = False
+
+    def _configure_auth(self):
+        """Configure username/password if provided."""
+        if self.username is None and self.password is None:
+            return
+        self.client.username_pw_set(self.username, self.password)
 
     def _validate_tls_files(self):
         """Ensure provided TLS file paths exist."""
@@ -61,6 +71,7 @@ class MQTTPublisher:
         """Connect to the MQTT broker, retrying a few times if needed."""
         for attempt in range(retries):
             try:
+                self._configure_auth()
                 self._configure_tls()
                 self.client.connect(self.host, self.port, self.keepalive)
                 self.client.loop_start()
