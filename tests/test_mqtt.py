@@ -182,6 +182,12 @@ def test_main_passes_configured_credentials_to_publisher(tmp_path):
         "publish_interval": 1,
         "broker_username": "alice",
         "broker_password": "wonderland",
+        "broker_port": 8883,
+        "tls_enable": True,
+        "tls_ca_cert": "/etc/ssl/certs/ca.pem",
+        "tls_client_cert": "/etc/ssl/certs/client.pem",
+        "tls_client_key": "/etc/ssl/private/client.key",
+        "tls_insecure": False,
     }
     cfg_file = tmp_path / "config.json"
     cfg_file.write_text(json.dumps(config_data))
@@ -206,6 +212,35 @@ def test_main_passes_configured_credentials_to_publisher(tmp_path):
         mock_pub_cls.assert_called_with(
             config_data["broker_host"],
             module.TOPIC,
+            port=config_data["broker_port"],
+            tls_enable=config_data["tls_enable"],
+            ca_cert=config_data["tls_ca_cert"],
+            client_cert=config_data["tls_client_cert"],
+            client_key=config_data["tls_client_key"],
+            tls_insecure=config_data["tls_insecure"],
             username=config_data["broker_username"],
             password=config_data["broker_password"],
         )
+
+
+def test_load_config_applies_security_defaults(tmp_path):
+    """Missing security settings should fall back to safe defaults."""
+    cfg_file = tmp_path / "config.json"
+    cfg_file.write_text(json.dumps({"broker_host": "secure.example"}))
+
+    with patch.dict(os.environ, {"CONFIG_PATH": str(cfg_file)}):
+        spec = importlib.util.spec_from_file_location(
+            "greenscale_edge_config_test", MAIN_MODULE_PATH)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+
+        config = module.load_config()
+
+    assert config["broker_host"] == "secure.example"
+    assert config["broker_port"] == 1883
+    assert config["tls_enable"] is False
+    assert config["tls_ca_cert"] is None
+    assert config["tls_client_cert"] is None
+    assert config["tls_client_key"] is None
+    assert config["tls_insecure"] is False

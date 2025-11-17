@@ -13,23 +13,38 @@ CFG_PATH = pathlib.Path(os.environ.get(
     "/home/user/greenscale-edge/greenscale-edge/config.json",
 ))
 
+DEFAULT_CONFIG = {
+    "broker_host": "192.168.1.100",
+    "broker_port": 1883,
+    "publish_interval": 10,
+    "broker_username": None,
+    "broker_password": None,
+    "tls_enable": False,
+    "tls_ca_cert": None,
+    "tls_client_cert": None,
+    "tls_client_key": None,
+    "tls_insecure": False,
+}
+
 
 def load_config():
+    config = DEFAULT_CONFIG.copy()
     if CFG_PATH.exists():
         with CFG_PATH.open() as f:
-            return json.load(f)
-    return {
-        "broker_host": "192.168.1.100",
-        "publish_interval": 10,
-        "broker_username": None,
-        "broker_password": None,
-    }
+            config.update(json.load(f))
+    return config
 
 
 cfg = load_config()
 BROKER_HOST = cfg.get("broker_host", "192.168.1.100")
 BROKER_USERNAME = cfg.get("broker_username")
 BROKER_PASSWORD = cfg.get("broker_password")
+BROKER_PORT = cfg.get("broker_port", 1883)
+TLS_ENABLE = cfg.get("tls_enable", False)
+TLS_CA_CERT = cfg.get("tls_ca_cert")
+TLS_CLIENT_CERT = cfg.get("tls_client_cert")
+TLS_CLIENT_KEY = cfg.get("tls_client_key")
+TLS_INSECURE = cfg.get("tls_insecure", False)
 PUBLISH_INTERVAL = cfg.get("publish_interval", 10)
 DEVICE_ID = os.getenv("DEVICE_ID", socket.gethostname())
 TOPIC = f"greenscale/{DEVICE_ID}/telemetry"
@@ -76,6 +91,12 @@ def main():
     publisher = MQTTPublisher(
         cfg["broker_host"],
         TOPIC,
+        port=cfg["broker_port"],
+        tls_enable=cfg["tls_enable"],
+        ca_cert=cfg["tls_ca_cert"],
+        client_cert=cfg["tls_client_cert"],
+        client_key=cfg["tls_client_key"],
+        tls_insecure=cfg["tls_insecure"],
         username=cfg.get("broker_username"),
         password=cfg.get("broker_password"),
     )
