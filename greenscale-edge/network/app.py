@@ -27,18 +27,26 @@ CONFIG_PATH = Path("/home/user/greenscale-edge/greenscale-edge/config.json")
 
 @app.route("/config", methods=["GET", "POST"])
 def config_page():
-    if request.method == "POST":
-        data = {
-            "broker_host": request.form.get("broker_host", "").strip(),
-            "publish_interval": int(request.form.get("publish_interval", "10")),
-            "device_name": request.form.get("device_name", "").strip(),
-        }
-        CONFIG_PATH.write_text(json.dumps(data, indent=2))
-        return redirect("/config?ok=1")
 
     current = {}
     if CONFIG_PATH.exists():
-        current = json.loads(CONFIG_PATH.read_text())
+        try:
+            current = json.loads(CONFIG_PATH.read_text())
+        except Exception:
+            current = {}
+
+    if request.method == "POST":
+        current["broker_host"] = request.form.get("broker_host", "").strip()
+        current["publish_interval"] = int(
+            request.form.get("publish_interval", "10"))
+        current["device_name"] = request.form.get("device_name", "").strip()
+        current["broker_username"] = request.form.get(
+            "broker_username", "").strip()
+        current["broker_password"] = request.form.get(
+            "broker_password", "").strip()
+
+        CONFIG_PATH.write_text(json.dumps(current, indent=2))
+        return redirect("/config?ok=1")
 
     return render_template("config.html", config=current, ok=request.args.get("ok"))
 

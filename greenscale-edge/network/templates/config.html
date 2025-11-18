@@ -2,9 +2,17 @@
 <title>Edge Config</title>
 <h2>Device Configuration</h2>
 {% if ok %}<p style="color:green;">Saved!</p>{% endif %}
+
 <form method="post">
   MQTT broker: <input name="broker_host" value="{{ config.broker_host }}"><br>
   Publish interval (s): <input name="publish_interval" value="{{ config.publish_interval }}"><br>
   Device name: <input name="device_name" value="{{ config.device_name }}"><br>
+
+  <hr>
+
+  <h3>MQTT Authentication</h3>
+  Username: <input name="broker_username" value="{{ config.broker_username }}"><br>
+  Password: <input name="broker_password" type="password" value="{{ config.broker_password }}"><br>
+
   <button type="submit">Save</button>
 </form>
