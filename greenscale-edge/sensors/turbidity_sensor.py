@@ -1,12 +1,40 @@
-import random
+# sensors/turbidity_sensor.py
+"""
+Turbidity sensor (DFRobot SEN0189) on ADS1115 A0.
+
+DFRobot calibration curve:
+
+If voltage <= 2.5:
+    NTU = 3000
+Else:
+    NTU = -1120.4 * V^2 + 5742.3 * V - 4352.9
+"""
+
 from datetime import datetime, UTC
+from .adc import read_channel_mv
+
+TURBIDITY_CHANNEL = 0  # ADS1115 A0
+
+
+def voltage_to_ntu(volts: float) -> float:
+    if volts <= 2.5:
+        return 3000.0
+    return (
+        -1120.4 * volts * volts
+        + 5742.3 * volts
+        - 4352.9
+    )
 
 
 def read():
-    """Simulate turbidity sensor reading in NTU."""
+    """Returns NTU."""
+    mv = read_channel_mv(TURBIDITY_CHANNEL)
+    volts = mv / 1000.0
+    ntu = voltage_to_ntu(volts)
+
     return {
         "sensor": "turbidity",
-        "value": round(2.4 + random.uniform(-0.2, 0.2), 2),
+        "value": round(ntu, 2),
         "units": "NTU",
         "status": "ok",
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
