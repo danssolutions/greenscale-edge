@@ -2,9 +2,17 @@
 
 ## quick setup instructions
 
+Enable I2C interface and 1-Wire interface through `sudo raspi-config`. Then reboot with `sudo reboot`.
+
+Afterwards:
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y network-manager python3-pip python3-picamera2 libcamera-apps python3-opencv python3-flask python3-paho-mqtt
+sudo modprobe w1-gpio
+sudo modprobe w1-therm
+sudo apt install -y build-essential python3-dev python3-smbus i2c-tools git network-manager python3-pip python3-picamera2 libcamera-apps python3-opencv python3-flask python3-paho-mqtt
+git clone https://github.com/DFRobot/DFRobot_ADS1115.git
+cd ~/DFRobot_ADS1115/python/raspberrypi
+sudo python DFRobot_ADS1115.py
 sudo cp ~/greenscale-edge/systemd/greenscale-auto-ap.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-main.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-config.service /etc/systemd/system/
@@ -14,6 +22,7 @@ sudo systemctl start greenscale-edge-main.service
 sudo systemctl enable greenscale-edge-config.service
 sudo systemctl start greenscale-edge-config.service
 ```
+
 Update the `ExecStart` path in `/etc/systemd/system/greenscale-edge-main.service`
 if your repository lives somewhere other than `/home/user/greenscale-edge`.
 
