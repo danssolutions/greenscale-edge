@@ -12,7 +12,7 @@ PUMP_PIN = 12        # BCM numbering (GPIO12)
 PWM_FREQ = 1000      # 1 kHz PWM (safe default)
 DUTY_CYCLE = 75      # % ON time during the 20-second pumping phase
 PUMP_ON_DURATION = 20       # seconds
-PUMP_REST_DURATION = 300    # seconds (5 minutes)
+PUMP_REST_DURATION = 20    # seconds (5 minutes)
 
 
 # ========================
