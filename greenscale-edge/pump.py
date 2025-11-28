@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 import time
-import threading
 import RPi.GPIO as GPIO
-
 
 # ========================
 # Pump Configuration
 # ========================
 
-PUMP_PIN = 12        # BCM numbering (GPIO12)
-PWM_FREQ = 1000      # 1 kHz PWM (safe default)
-DUTY_CYCLE = 75      # % ON time during the 20-second pumping phase
-PUMP_ON_DURATION = 20       # seconds
-PUMP_REST_DURATION = 20    # seconds (5 minutes)
+PUMP_PIN = 12             # BCM pin number (GPIO12)
+PWM_FREQ = 1000           # Hz
+DUTY_CYCLE = 100           # % duty during active phase
+PUMP_ON_DURATION = 20     # seconds
+PUMP_REST_DURATION = 20  # seconds (5 min)
 
-
-# ========================
-# Pump Worker Thread
-# ========================
 
 def pump_loop():
     GPIO.setmode(GPIO.BCM)
@@ -27,35 +21,28 @@ def pump_loop():
     pwm.start(0)
 
     print("[PUMP] Pump loop started.")
-
     try:
         while True:
-            # Phase 1: Pump ON with duty cycle
-            print(
-                f"[PUMP] ON for {PUMP_ON_DURATION}s at {DUTY_CYCLE}% duty cycle")
+            # Active phase
+            print(f"[PUMP] ON for {PUMP_ON_DURATION}s at {DUTY_CYCLE}% duty")
             pwm.ChangeDutyCycle(DUTY_CYCLE)
             time.sleep(PUMP_ON_DURATION)
 
-            # Phase 2: Pump OFF
+            # Rest phase
             print(f"[PUMP] OFF for {PUMP_REST_DURATION}s")
             pwm.ChangeDutyCycle(0)
             time.sleep(PUMP_REST_DURATION)
     except KeyboardInterrupt:
-        pass
+        print("[PUMP] Interrupted, cleaning up GPIO.")
     finally:
-        print("[PUMP] Cleaning up GPIO")
         pwm.stop()
         GPIO.cleanup()
+        print("[PUMP] GPIO cleaned up, exiting.")
 
 
-# def start_pump_thread():
-#     """
-#     Start pump_loop() in a daemon thread so it doesn't block main().
-#     Call this once from main.py after boot.
-#     """
-#     t = threading.Thread(target=pump_loop, daemon=True)
-#     t.start()
-#     return t
+def main():
+    pump_loop()
+
 
 if __name__ == "__main__":
-    pump_loop()
+    main()

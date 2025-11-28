@@ -1,0 +1,17 @@
+[Unit]
+Description=Greenscale Pump Controller
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/user/greenscale-edge/greenscale-edge/pump.py
+WorkingDirectory=/home/user/greenscale-edge/greenscale-edge
+Restart=on-failure
+RestartSec=10
+User=root
+Environment="PYTHONUNBUFFERED=1"
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
