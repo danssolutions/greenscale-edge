@@ -36,7 +36,8 @@ def read():
 
     return {
         "sensor": "turbidity",
-        "value": round(ntu, 2),
+        "value": volts,
+        # "value": round(ntu, 2),
         "units": "NTU",
         "status": "ok",
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
