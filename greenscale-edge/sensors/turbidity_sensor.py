@@ -10,6 +10,8 @@ Else:
     NTU = -1120.4 * V^2 + 5742.3 * V - 4352.9
 """
 
+# TODO: according to team this is wrong, should be manually calibrated with the mech team
+
 from datetime import datetime, UTC
 from .adc import read_channel_mv
 
