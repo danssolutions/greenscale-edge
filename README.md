@@ -42,11 +42,11 @@ Finally, install and enable the systemd services:
 sudo cp ~/greenscale-edge/systemd/greenscale-auto-ap.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-main.service /etc/systemd/system/
 sudo cp ~/greenscale-edge/systemd/greenscale-edge-config.service /etc/systemd/system/
+sudo cp ~/greenscale-edge/systemd/greenscale-pump.service /etc/systemd/system/
 
 sudo systemctl daemon-reload
 
 sudo systemctl enable --now greenscale-edge-main.service
-sudo systemctl enable --now greenscale-edge-config.service
 ```
 
 If your repository is located somewhere other than `/home/user/greenscale-edge`,

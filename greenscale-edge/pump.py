@@ -10,7 +10,7 @@ PUMP_PIN = 12             # BCM pin number (GPIO12)
 PWM_FREQ = 1000           # Hz
 DUTY_CYCLE = 100           # % duty during active phase
 PUMP_ON_DURATION = 20     # seconds
-PUMP_REST_DURATION = 20  # seconds (5 min)
+PUMP_REST_DURATION = 300  # seconds (5 min)
 
 
 def pump_loop():

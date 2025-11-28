@@ -1,7 +1,7 @@
 [Unit]
 Description=Greenscale Edge Main Service
-After=network-online.target greenscale-auto-ap.service greenscale-pump.service
-Wants=network-online.target greenscale-auto-ap.service greenscale-pump.service
+After=network-online.target greenscale-auto-ap.service greenscale-edge-config.service greenscale-pump.service
+Wants=network-online.target greenscale-auto-ap.service greenscale-edge-config.service greenscale-pump.service
 
 [Service]
 Type=simple
