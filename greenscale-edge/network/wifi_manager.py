@@ -16,7 +16,7 @@ from pathlib import Path
 
 # --- Configuration ---
 INTERFACE = os.getenv("WIFI_IFACE", "wlan0")
-WAIT_TIME = int(os.getenv("WIFI_WAIT_SEC", "20"))
+WAIT_TIME = int(os.getenv("WIFI_WAIT_SEC", "40"))
 AP_BASE_SSID = os.getenv("AP_BASE_SSID", "Greenscale")
 
 logging.basicConfig(
@@ -51,13 +51,23 @@ def wifi_connected() -> bool:
 
 
 def list_wifi_profiles():
-    """List saved Wi-Fi profiles."""
+    """List saved Wi-Fi client profiles (exclude AP-mode connections)."""
     try:
         res = subprocess.run(
-            ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"],
-            capture_output=True, text=True
+            ["nmcli", "-t", "-f", "NAME,TYPE,802-11-wireless.mode", "connection", "show"],
+            capture_output=True,
+            text=True,
         )
-        return [line.split(":")[0] for line in res.stdout.splitlines() if ":wifi" in line]
+        profiles = []
+        for line in res.stdout.splitlines():
+            parts = line.split(":")
+            if len(parts) < 2:
+                continue
+            name, ctype = parts[0], parts[1]
+            mode = parts[2] if len(parts) > 2 else ""
+            if ctype == "wifi" and mode != "ap":
+                profiles.append(name)
+        return profiles
     except Exception as e:
         log.error("Unable to list Wi-Fi profiles: %s", e)
         return []
@@ -91,7 +101,7 @@ def start_access_point():
         "nmcli", "connection", "add",
         "type", "wifi", "ifname", INTERFACE,
         "con-name", ssid,
-        "autoconnect", "yes",
+        "autoconnect", "no",
         "ssid", ssid,
         "802-11-wireless.mode", "ap",
         "802-11-wireless.band", "bg",
