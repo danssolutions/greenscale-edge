@@ -3,7 +3,7 @@ import socket
 import time
 from datetime import datetime, UTC
 from network.mqtt import MQTTPublisher
-from camera import compute_camera_metrics
+from camera import camera
 from sensors import temp_sensor, ph_sensor, do_sensor, turbidity_sensor
 import json
 import pathlib
@@ -65,7 +65,7 @@ def collect_sensor_data():
 def collect_camera_data():
     """Capture camera frame and compute turbidity + average color."""
     try:
-        metrics = compute_camera_metrics()
+        metrics = camera.compute_camera_metrics()
         # Make sure keys exist and types are sane
         return {
             "turbidity_index": float(metrics.get("turbidity_index", 0.0)),
