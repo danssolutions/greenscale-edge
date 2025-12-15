@@ -1,7 +1,10 @@
+import datetime
 import importlib.util
+import importlib
 import json
 import os
 import sys
+import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -16,6 +19,141 @@ PROJECT_SRC = REPO_ROOT / "greenscale-edge" / "greenscale-edge"
 
 if str(PROJECT_SRC) not in sys.path:
     sys.path.insert(0, str(PROJECT_SRC))
+
+
+@pytest.fixture(autouse=True)
+def stub_paho(monkeypatch):
+    """Provide a lightweight stub for paho-mqtt so tests run without the package."""
+
+    class FakeClient:
+        def __init__(self, *_, **__):
+            self._username = None
+            self._password = None
+
+        def connect(self, *_args, **_kwargs):
+            return 0
+
+        def publish(self, *_args, **_kwargs):
+            return True
+
+        def username_pw_set(self, username, password):
+            self._username = username
+            self._password = password
+
+        def tls_set(self, *_, **__):
+            return True
+
+        def tls_insecure_set(self, *_args, **_kwargs):
+            return True
+
+        def loop_start(self):
+            return True
+
+    class _CallbackAPIVersion:
+        VERSION1 = 1
+        VERSION2 = 2
+
+    cv2_mod = types.ModuleType("cv2")
+    cv2_mod.COLOR_RGB2GRAY = 0
+    cv2_mod.COLOR_RGB2BGR = 1
+    cv2_mod.resize = lambda img, size: img
+    cv2_mod.cvtColor = lambda img, code: img
+    cv2_mod.imwrite = lambda path, frame: True
+
+    picam_mod = types.ModuleType("picamera2")
+
+    class FakePicamera2:
+        def __init__(self):
+            self.started = False
+
+        def start(self):
+            self.started = True
+
+        def stop(self):
+            self.started = False
+
+        def capture_array(self, *_args, **_kwargs):
+            return [[0, 0, 0]]
+
+    picam_mod.Picamera2 = FakePicamera2
+
+    sensors_pkg = types.ModuleType("sensors")
+    sensors_pkg.__path__ = []
+    sensors_pkg.__all__ = [
+        "temp_sensor",
+        "ph_sensor",
+        "do_sensor",
+        "turbidity_sensor",
+    ]
+
+    temp_module = types.ModuleType("sensors.temp_sensor")
+    temp_module.read = lambda: {
+        "sensor": "temperature",
+        "value": 22.5,
+        "units": "degC",
+        "status": "ok",
+        "timestamp": datetime.datetime.now(datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        ),
+    }
+
+    ph_module = types.ModuleType("sensors.ph_sensor")
+    ph_module.read = lambda: {
+        "sensor": "ph",
+        "value": 7.0,
+        "units": "pH",
+        "status": "ok",
+        "timestamp": datetime.datetime.now(datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        ),
+    }
+
+    do_module = types.ModuleType("sensors.do_sensor")
+    do_module.read = lambda: {
+        "sensor": "dissolved_oxygen",
+        "value": 8.5,
+        "units": "mg/L",
+        "status": "ok",
+        "temperature_c": 20.0,
+        "raw_mv": 1500,
+        "timestamp": datetime.datetime.now(datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        ),
+    }
+
+    turbidity_module = types.ModuleType("sensors.turbidity_sensor")
+    turbidity_module.read = lambda: {
+        "sensor": "turbidity",
+        "value": 3.0,
+        "units": "NTU",
+        "status": "ok",
+        "timestamp": datetime.datetime.now(datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        ),
+    }
+
+    paho_mod = types.ModuleType("paho")
+    mqtt_mod = types.ModuleType("paho.mqtt")
+    client_mod = types.ModuleType("paho.mqtt.client")
+    client_mod.Client = FakeClient
+    client_mod.CallbackAPIVersion = _CallbackAPIVersion
+    mqtt_mod.client = client_mod
+    paho_mod.mqtt = mqtt_mod
+
+    monkeypatch.setitem(sys.modules, "paho", paho_mod)
+    monkeypatch.setitem(sys.modules, "paho.mqtt", mqtt_mod)
+    monkeypatch.setitem(sys.modules, "paho.mqtt.client", client_mod)
+    monkeypatch.setitem(sys.modules, "cv2", cv2_mod)
+    monkeypatch.setitem(sys.modules, "picamera2", picam_mod)
+    monkeypatch.setitem(sys.modules, "sensors", sensors_pkg)
+    monkeypatch.setitem(sys.modules, "sensors.temp_sensor", temp_module)
+    monkeypatch.setitem(sys.modules, "sensors.ph_sensor", ph_module)
+    monkeypatch.setitem(sys.modules, "sensors.do_sensor", do_module)
+    monkeypatch.setitem(sys.modules, "sensors.turbidity_sensor", turbidity_module)
+    sensors_pkg.temp_sensor = temp_module
+    sensors_pkg.ph_sensor = ph_module
+    sensors_pkg.do_sensor = do_module
+    sensors_pkg.turbidity_sensor = turbidity_module
 
 
 def load_module():
@@ -195,6 +333,7 @@ def test_main_passes_configured_credentials_to_publisher(tmp_path):
     with (
         patch.dict(os.environ, {"CONFIG_PATH": str(cfg_file)}),
         patch("network.mqtt.MQTTPublisher") as mock_pub_cls,
+        patch("time.sleep", return_value=None),
     ):
         mock_instance = MagicMock()
         mock_instance.connect.return_value = True
