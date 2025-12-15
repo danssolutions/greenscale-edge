@@ -76,7 +76,8 @@ def add_project_to_path(monkeypatch):
     monkeypatch.setitem(sys.modules, "sensors.temp_sensor", temp_module)
     monkeypatch.setitem(sys.modules, "sensors.ph_sensor", ph_module)
     monkeypatch.setitem(sys.modules, "sensors.do_sensor", do_module)
-    monkeypatch.setitem(sys.modules, "sensors.turbidity_sensor", turbidity_module)
+    monkeypatch.setitem(
+        sys.modules, "sensors.turbidity_sensor", turbidity_module)
 
 
 def load_sensor_module(module_name: str, monkeypatch: pytest.MonkeyPatch):
