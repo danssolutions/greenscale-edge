@@ -22,24 +22,27 @@ DO_CHANNEL = 2  # ADS1115 A2
 # ----------------- Two-point calibration ONLY -----------------
 # CAL1: high-temperature calibration point
 # CAL2: low-temperature calibration point
-CAL1_T_C = 25.0      # °C at high-temp calibration
-CAL1_V_MV = 1600.0   # mV at CAL1_T_C in air-saturated water
+CAL1_T_C = 20.75      # °C at high-temp calibration
+CAL1_V_MV = 750.0   # mV at CAL1_T_C in air-saturated water
 
-CAL2_T_C = 15.0      # °C at low-temp calibration
-CAL2_V_MV = 1300.0   # mV at CAL2_T_C in air-saturated water
+CAL2_T_C = 30.44      # °C at low-temp calibration
+CAL2_V_MV = 860.0   # mV at CAL2_T_C in air-saturated water
 
 
-def _saturation_voltage_mv(temp_c: float) -> float:
+def _saturation_voltage_mv(voltage_mv: float, temp_c: float) -> float:
     """
     Two-point calibration line for saturation voltage V_sat(T):
 
         V_sat = (T - CAL2_T) * (CAL1_V - CAL2_V)/(CAL1_T - CAL2_T) + CAL2_V
     """
-    denom = (CAL1_T_C - CAL2_T_C)
-    if denom == 0:
-        # Avoid div-by-zero if someone misconfigures the constants.
-        return CAL1_V_MV
-    return ((temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / denom) + CAL2_V_MV
+    # denom = (CAL1_T_C - CAL2_T_C)
+    # if denom == 0:
+    #     # Avoid div-by-zero if someone misconfigures the constants.
+    #     return CAL1_V_MV
+    # return ((temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / denom) + CAL2_V_MV
+    V_sat = (temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / \
+        (CAL1_T_C - CAL2_T_C) + CAL2_V_MV
+    return (voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
 
 
 # ----------------- DO saturation table (0–40 °C) -----------------
@@ -77,7 +80,7 @@ def mv_and_temp_to_do_mg_l(voltage_mv: float, temp_c: float) -> float:
     idx = _temperature_index(temp_c)
     do_sat_ug_l = DO_TABLE_UG_L[idx]  # saturation DO at this T (µg/L)
 
-    v_sat = _saturation_voltage_mv(temp_c)
+    v_sat = _saturation_voltage_mv(voltage_mv, temp_c)
     if v_sat <= 0:
         # Bad calibration; avoid junk.
         return 0.0

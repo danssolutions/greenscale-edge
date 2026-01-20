@@ -17,8 +17,8 @@ from .adc import read_channel_mv
 PH_CHANNEL = 1  # ADS1115 A1
 
 # Calibration coefficients (from your buffer data)
-PH_M = -6.31
-PH_B = 16.57
+PH_M = -0.158
+PH_B = 4.632
 
 
 def voltage_to_ph(volts: float) -> float:
