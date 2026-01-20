@@ -10,12 +10,12 @@ Else:
     NTU = -1120.4 * V^2 + 5742.3 * V - 4352.9
 """
 
-# TODO: according to team this is wrong, should be manually calibrated with the mech team
-
 from datetime import datetime, UTC
 from .adc import read_channel_mv
 
 TURBIDITY_CHANNEL = 0  # ADS1115 A0
+
+# based on sample code from https://wiki.dfrobot.com/Turbidity_sensor_SKU__SEN0189
 
 
 def voltage_to_ntu(volts: float) -> float:
@@ -36,8 +36,7 @@ def read():
 
     return {
         "sensor": "turbidity",
-        "value": volts,
-        # "value": round(ntu, 2),
+        "value": round(ntu, 2),
         "units": "NTU",
         "status": "ok",
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
