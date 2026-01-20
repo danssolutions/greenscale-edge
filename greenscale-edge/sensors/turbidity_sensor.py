@@ -16,16 +16,14 @@ from .adc import read_channel_mv
 TURBIDITY_CHANNEL = 0  # ADS1115 A0
 
 # based on sample code from https://wiki.dfrobot.com/Turbidity_sensor_SKU__SEN0189
+# the original code assumes 5v, but we have 3.3v, so we bump up the scaling it
 
 
 def voltage_to_ntu(volts: float) -> float:
+    volts = volts * (5.0 / 3.3)
     if volts <= 2.5:
         return 3000.0
-    return (
-        -1120.4 * volts * volts
-        + 5742.3 * volts
-        - 4352.9
-    )
+    return -1120.4 * volts * volts + 5742.3 * volts - 4352.9
 
 
 def read():
