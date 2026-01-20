@@ -42,7 +42,6 @@ def _saturation_voltage_mv(voltage_mv: float, temp_c: float) -> float:
     # return ((temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / denom) + CAL2_V_MV
     V_sat = (temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / \
         (CAL1_T_C - CAL2_T_C) + CAL2_V_MV
-    print(voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
     return (voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
 
 
@@ -81,14 +80,14 @@ def mv_and_temp_to_do_mg_l(voltage_mv: float, temp_c: float) -> float:
     idx = _temperature_index(temp_c)
     do_sat_ug_l = DO_TABLE_UG_L[idx]  # saturation DO at this T (µg/L)
 
-    v_sat = _saturation_voltage_mv(voltage_mv, temp_c)
-    if v_sat <= 0:
+    do_ug_l = _saturation_voltage_mv(voltage_mv, temp_c)
+    if do_ug_l <= 0:
         # Bad calibration; avoid junk.
         return 0.0
 
     # Arduino formula:
     #   DO_raw(µg/L) = voltage_mv * DO_Table[T] / V_sat
-    do_ug_l = voltage_mv * do_sat_ug_l / v_sat
+    # do_ug_l = voltage_mv * do_sat_ug_l / v_sat
 
     # Convert to mg/L
     do_mg_l = do_ug_l / 1000.0
@@ -113,8 +112,7 @@ def read(temp_c: float | None = None):
 
     return {
         "sensor": "dissolved_oxygen",
-        # "value": round(do_value, 2),
-        "value": mv,
+        "value": round(do_value, 2),
         "units": "mg/L",
         "status": "ok",
         "temperature_c": round(temp_c, 2),
