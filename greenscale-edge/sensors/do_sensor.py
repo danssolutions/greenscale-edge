@@ -42,7 +42,7 @@ def _saturation_voltage_mv(voltage_mv: float, temp_c: float) -> float:
     # return ((temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / denom) + CAL2_V_MV
     V_sat = (temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / \
         (CAL1_T_C - CAL2_T_C) + CAL2_V_MV
-    print(DO_TABLE_UG_L[int(temp_c)])
+    print(voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
     return (voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
 
 
