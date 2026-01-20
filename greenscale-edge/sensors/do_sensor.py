@@ -112,7 +112,8 @@ def read(temp_c: float | None = None):
 
     return {
         "sensor": "dissolved_oxygen",
-        "value": round(do_value, 2),
+        # "value": round(do_value, 2),
+        "value": mv,
         "units": "mg/L",
         "status": "ok",
         "temperature_c": round(temp_c, 2),
