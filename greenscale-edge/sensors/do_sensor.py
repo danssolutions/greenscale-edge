@@ -20,26 +20,17 @@ from .temp_sensor import read_temp_c
 DO_CHANNEL = 2  # ADS1115 A2
 
 # ----------------- Two-point calibration ONLY -----------------
-# CAL1: high-temperature calibration point
-# CAL2: low-temperature calibration point
-CAL1_T_C = 20.75      # °C at high-temp calibration
-CAL1_V_MV = 750.0   # mV at CAL1_T_C in air-saturated water
+CAL1_T_C = 20.75
+CAL1_V_MV = 750.0
 
-CAL2_T_C = 30.44      # °C at low-temp calibration
-CAL2_V_MV = 860.0   # mV at CAL2_T_C in air-saturated water
+CAL2_T_C = 30.44
+CAL2_V_MV = 860.0
 
 
 def _saturation_voltage_mv(voltage_mv: float, temp_c: float) -> float:
     """
     Two-point calibration line for saturation voltage V_sat(T):
-
-        V_sat = (T - CAL2_T) * (CAL1_V - CAL2_V)/(CAL1_T - CAL2_T) + CAL2_V
     """
-    # denom = (CAL1_T_C - CAL2_T_C)
-    # if denom == 0:
-    #     # Avoid div-by-zero if someone misconfigures the constants.
-    #     return CAL1_V_MV
-    # return ((temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / denom) + CAL2_V_MV
     V_sat = (temp_c - CAL2_T_C) * (CAL1_V_MV - CAL2_V_MV) / \
         (CAL1_T_C - CAL2_T_C) + CAL2_V_MV
     return (voltage_mv * DO_TABLE_UG_L[int(temp_c)] / V_sat)
@@ -84,10 +75,6 @@ def mv_and_temp_to_do_mg_l(voltage_mv: float, temp_c: float) -> float:
     if do_ug_l <= 0:
         # Bad calibration; avoid junk.
         return 0.0
-
-    # Arduino formula:
-    #   DO_raw(µg/L) = voltage_mv * DO_Table[T] / V_sat
-    # do_ug_l = voltage_mv * do_sat_ug_l / v_sat
 
     # Convert to mg/L
     do_mg_l = do_ug_l / 1000.0
